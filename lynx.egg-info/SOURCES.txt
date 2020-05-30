@@ -1,0 +1,7 @@
+setup.py
+lynx.egg-info/PKG-INFO
+lynx.egg-info/SOURCES.txt
+lynx.egg-info/dependency_links.txt
+lynx.egg-info/entry_points.txt
+lynx.egg-info/requires.txt
+lynx.egg-info/top_level.txt

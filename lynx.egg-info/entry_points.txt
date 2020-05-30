@@ -1,0 +1,4 @@
+
+        [console_scripts]
+        lynx=lynx_pkg.lynx:main
+    

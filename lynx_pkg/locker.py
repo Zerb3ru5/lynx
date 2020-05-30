@@ -23,10 +23,18 @@ class Locker():
 
     # hide a directory by adding the HIDDEN attribute and mark it in the database
     def hide(self, path, password, shortcut=''):
-        if os.path.exists(path):
+        if os.path.exists(path) and os.path.isdir(path):
+
+            foldername = os.path.basename(path)
 
             # hide the path
-            os.system('attrib +h %s' % path)
+            cmd = f'ren "{path}" "{foldername}' + '.{21EC2020-3AEA-1069-A2DD-08002B30309D}"'
+            print(cmd)
+            os.system(cmd)
+
+            cmd = f'attrib +h +s +i "{path}' + '.{21EC2020-3AEA-1069-A2DD-08002B30309D}"'
+            print(cmd)
+            os.system(cmd)
 
             # mark it as hidden in the database and create a new entry if it is the first one with that path
             self.c.execute('''SELECT id FROM data WHERE path = ?''', (path,))
@@ -55,7 +63,15 @@ class Locker():
 
             # reveal the folder
             if right_password:
-                os.system('attrib -h %s' % path)
+
+                foldername = os.path.basename(path)
+
+                cmd = 'attrib -h -s -i "%s.{21EC2020-3AEA-1069-A2DD-08002B30309D}"' % path
+                os.system(cmd)
+
+                cmd = 'ren "%s.{21EC2020-3AEA-1069-A2DD-08002B30309D}" "'%path + foldername + '"'
+                print(cmd)
+                os.system(cmd)
 
                 # mark it as revealed in database
                 self.c.execute('''UPDATE data SET locked = 0 WHERE path = ?''', (path,))

@@ -6,7 +6,7 @@
 
 import click
 import os
-from locker import Locker
+from lynx_pkg.locker import Locker
 
 
 lr = Locker()
