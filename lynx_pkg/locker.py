@@ -7,6 +7,7 @@
 import os
 import sqlite3
 import cryptography
+import click
 
 
 class Locker():
@@ -23,30 +24,37 @@ class Locker():
 
     # hide a directory by adding the HIDDEN attribute and mark it in the database
     def hide(self, path, password, shortcut=''):
-        if os.path.exists(path) and os.path.isdir(path):
 
-            foldername = os.path.basename(path)
+        foldername = os.path.basename(path)
 
-            # hide the path
-            cmd = f'ren "{path}" "{foldername}' + '.{21EC2020-3AEA-1069-A2DD-08002B30309D}"'
-            print(cmd)
-            os.system(cmd)
+        someval = click.prompt('enter some value')
+        print(someval)
 
-            cmd = f'attrib +h +s +i "{path}' + '.{21EC2020-3AEA-1069-A2DD-08002B30309D}"'
-            print(cmd)
-            os.system(cmd)
+        # hide the path
+        cmd = f'ren "{path}" "{foldername}' + \
+            '.{21EC2020-3AEA-1069-A2DD-08002B30309D}"'
+        print(cmd)
+        os.system(cmd)
 
-            # mark it as hidden in the database and create a new entry if it is the first one with that path
-            self.c.execute('''SELECT id FROM data WHERE path = ?''', (path,))
-            similar_entries = self.c.fetchall()
-            if len(similar_entries) != 0:
-                self.c.execute(
-                    '''UPDATE data SET locked = 1 WHERE path = ?''', (path,))
-                self.conn.commit()
-                print('update old entry')
-            elif len(similar_entries) == 0:
-                self.writeRow(path, shortcut, password, 1)
-                print('create new entry')
+        cmd = f'attrib +h +s +i "{path}' + \
+            '.{21EC2020-3AEA-1069-A2DD-08002B30309D}"'
+        print(cmd)
+        os.system(cmd)
+
+        # mark it as hidden in the database and create a new entry if it is the first one with that path
+        self.c.execute('''SELECT id FROM data WHERE path = ?''', (path,))
+        similar_entries = self.c.fetchall()
+
+        if len(similar_entries) != 0:
+            self.c.execute(
+                '''UPDATE data SET locked = 1, password = ? WHERE path = ?''', (password, path,))
+            self.conn.commit()
+            print('update old entry')
+        elif len(similar_entries) == 0:
+            self.writeRow(path, shortcut, password, 1)
+            print('create new entry')
+
+        return 100
 
     # reveal a directory by removing the HIDDEN attribute and mark that in the database by checking the password
     def reveal(self, path, password):
@@ -69,13 +77,21 @@ class Locker():
                 cmd = 'attrib -h -s -i "%s.{21EC2020-3AEA-1069-A2DD-08002B30309D}"' % path
                 os.system(cmd)
 
-                cmd = 'ren "%s.{21EC2020-3AEA-1069-A2DD-08002B30309D}" "'%path + foldername + '"'
+                cmd = 'ren "%s.{21EC2020-3AEA-1069-A2DD-08002B30309D}" "' % path + \
+                    foldername + '"'
                 print(cmd)
                 os.system(cmd)
 
                 # mark it as revealed in database
-                self.c.execute('''UPDATE data SET locked = 0 WHERE path = ?''', (path,))
+                self.c.execute(
+                    '''UPDATE data SET locked = 0 WHERE path = ?''', (path,))
                 self.conn.commit()
+
+                return 101
+            else:
+                return 410
+        else:
+            return 401
 
     def readData(self):
         self.c.execute('''SELECT * FROM data''')
@@ -110,7 +126,7 @@ class Locker():
         if exists:
             self.c.execute(
                 f'''SELECT {column} FROM data WHERE {column_row_identifier} = "{value}"''')
-            item = self.c.fetchall()    
+            item = self.c.fetchall()
 
             return item
 
@@ -134,3 +150,23 @@ class Locker():
             self.unravelList(unravelled, depth)
 
         return unravelled
+
+    # check if a directory exists
+    def isValidDirectory(self, path):
+        if os.path.exists(path) and os.path.isdir(path):
+            return 900
+        else:
+            return 400
+
+
+    # check if the given path is already in the database
+    def isKnownPath(self, path):
+        if path in self.unravelList(self.readColumn('path'), 2):
+            return True
+        else:
+            return False
+
+    
+    # a variation of the getItem function to get the password
+    def getPassword(self, path):
+        return self.getItem('password', 'path', path)
