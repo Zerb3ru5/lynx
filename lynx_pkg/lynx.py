@@ -35,14 +35,14 @@ def hide(dir):
     if response == 900:
 
         # ask for the password if the path isn't known or the user wants a new one and access the hide function
-        if not lr.isKnownPath(dir):
+        if lr.isKnownPath(dir) == 401:
             password = click.prompt(
-                'Please enter your password to lock this folder')
+                'Please enter your password to lock this folder', hide_input=True)
         elif click.confirm('You already saved a password for this directory. Do you want to create a new one?'):
             password = click.prompt(
-                'Please enter your new password to lock this folder')
+                'Please enter your new password to lock this folder', hide_input=True)
         else:
-            password = lr.getPassword(dir)
+            password = lr.unravelList(lr.getPassword(dir), 2)[0]
 
         response = lr.hide(dir, password)
         feedback(response)
@@ -53,10 +53,21 @@ def hide(dir):
 @click.argument('dir')
 def reveal(dir):
 
-    # ask for the password and access the reveal function
-    password = click.prompt('Please enter your password to unlock')
-    response = lr.reveal(dir, password)
+    # check if the directory is known and if the directory is actually closed
+    response = lr.isKnownPath(dir)
     feedback(response)
+
+    if response == 910:
+
+        response = lr.isLocked(dir)
+        feedback(response)
+
+        if response == 920:
+
+            # ask for the password and access the reveal function
+            password = click.prompt('Please enter your password to unlock', hide_input=True)
+            response = lr.reveal(dir, password)
+            feedback(response)
 
 
 def feedback(code):
